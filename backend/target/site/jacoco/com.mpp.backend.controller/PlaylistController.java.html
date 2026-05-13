@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PlaylistController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">playlist-backend</a> &gt; <a href="index.source.html" class="el_package">com.mpp.backend.controller</a> &gt; <span class="el_source">PlaylistController.java</span></div><h1>PlaylistController.java</h1><pre class="source lang-java linenums">package com.mpp.backend.controller;
+
+import com.mpp.backend.dto.PageResponse;
+import com.mpp.backend.dto.PlaylistHistoryEntryResponse;
+import com.mpp.backend.dto.PlaylistRequest;
+import com.mpp.backend.dto.PlaylistResponse;
+import com.mpp.backend.mapper.PlaylistMapper;
+import com.mpp.backend.service.PlaylistService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+@Validated
+@RestController
+@RequestMapping(&quot;/api/playlists&quot;)
+public class PlaylistController {
+
+    private final PlaylistService playlistService;
+    private final PlaylistMapper playlistMapper;
+
+<span class="fc" id="L33">    public PlaylistController(PlaylistService playlistService, PlaylistMapper playlistMapper) {</span>
+<span class="fc" id="L34">        this.playlistService = playlistService;</span>
+<span class="fc" id="L35">        this.playlistMapper = playlistMapper;</span>
+<span class="fc" id="L36">    }</span>
+
+    @GetMapping
+    public PageResponse&lt;PlaylistResponse&gt; getPlaylists(
+            @RequestParam(defaultValue = &quot;0&quot;) @Min(0) int page,
+            @RequestParam(defaultValue = &quot;10&quot;) @Min(1) @Max(100) int size
+    ) {
+<span class="fc" id="L43">        var playlistPage = playlistService.getAllPlaylists(page, size);</span>
+
+<span class="fc" id="L45">        return new PageResponse&lt;&gt;(</span>
+<span class="fc" id="L46">                playlistPage.content().stream().map(playlistMapper::toResponse).toList(),</span>
+<span class="fc" id="L47">                playlistPage.page(),</span>
+<span class="fc" id="L48">                playlistPage.size(),</span>
+<span class="fc" id="L49">                playlistPage.totalElements(),</span>
+<span class="fc" id="L50">                playlistPage.totalPages()</span>
+        );
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    public PlaylistResponse getPlaylist(@PathVariable long id) {
+<span class="nc" id="L56">        return playlistMapper.toResponse(playlistService.getPlaylistById(id));</span>
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public PlaylistResponse createPlaylist(@Valid @RequestBody PlaylistRequest request) {
+<span class="fc" id="L62">        return playlistMapper.toResponse(playlistService.createPlaylist(request));</span>
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    public PlaylistResponse updatePlaylist(@PathVariable long id, @Valid @RequestBody PlaylistRequest request) {
+<span class="fc" id="L67">        return playlistMapper.toResponse(playlistService.updatePlaylist(id, request));</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletePlaylist(@PathVariable long id) {
+<span class="fc" id="L73">        playlistService.deletePlaylist(id);</span>
+<span class="fc" id="L74">    }</span>
+
+    @GetMapping(&quot;/{id}/history&quot;)
+    public PageResponse&lt;PlaylistHistoryEntryResponse&gt; getPlaylistHistory(
+            @PathVariable long id,
+            @RequestParam(defaultValue = &quot;0&quot;) @Min(0) int page,
+            @RequestParam(defaultValue = &quot;10&quot;) @Min(1) @Max(100) int size
+    ) {
+<span class="fc" id="L82">        var historyPage = playlistService.getPlaylistHistory(id, page, size);</span>
+
+<span class="fc" id="L84">        return new PageResponse&lt;&gt;(</span>
+<span class="fc" id="L85">                historyPage.content().stream().map(playlistMapper::toResponse).toList(),</span>
+<span class="fc" id="L86">                historyPage.page(),</span>
+<span class="fc" id="L87">                historyPage.size(),</span>
+<span class="fc" id="L88">                historyPage.totalElements(),</span>
+<span class="fc" id="L89">                historyPage.totalPages()</span>
+        );
+    }
+
+    @PostMapping(&quot;/{id}/history/{historyEntryId}/restore&quot;)
+    public PlaylistResponse restoreHistoryEntry(@PathVariable long id, @PathVariable long historyEntryId) {
+<span class="fc" id="L95">        return playlistMapper.toResponse(playlistService.restoreSnapshot(id, historyEntryId));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

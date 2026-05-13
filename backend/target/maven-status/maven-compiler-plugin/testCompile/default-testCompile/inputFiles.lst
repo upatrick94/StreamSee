@@ -1,0 +1,9 @@
+/Users/Patrick/IdeaProjects/MPP/backend/src/test/java/com/mpp/backend/controller/AdminControllerTest.java
+/Users/Patrick/IdeaProjects/MPP/backend/src/test/java/com/mpp/backend/controller/AuthControllerTest.java
+/Users/Patrick/IdeaProjects/MPP/backend/src/test/java/com/mpp/backend/controller/ChatControllerTest.java
+/Users/Patrick/IdeaProjects/MPP/backend/src/test/java/com/mpp/backend/controller/PlaylistControllerTest.java
+/Users/Patrick/IdeaProjects/MPP/backend/src/test/java/com/mpp/backend/integration/PlaylistPersistenceIntegrationTest.java
+/Users/Patrick/IdeaProjects/MPP/backend/src/test/java/com/mpp/backend/service/AuditLogServiceTest.java
+/Users/Patrick/IdeaProjects/MPP/backend/src/test/java/com/mpp/backend/service/AuthServiceTest.java
+/Users/Patrick/IdeaProjects/MPP/backend/src/test/java/com/mpp/backend/service/ChatServiceTest.java
+/Users/Patrick/IdeaProjects/MPP/backend/src/test/java/com/mpp/backend/service/PlaylistServiceTest.java

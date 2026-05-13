@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PlaylistGraphqlController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">playlist-backend</a> &gt; <a href="index.source.html" class="el_package">com.mpp.backend.graphql</a> &gt; <span class="el_source">PlaylistGraphqlController.java</span></div><h1>PlaylistGraphqlController.java</h1><pre class="source lang-java linenums">package com.mpp.backend.graphql;
+
+import com.mpp.backend.dto.GeneratorStatusResponse;
+import com.mpp.backend.dto.PageResponse;
+import com.mpp.backend.dto.PlaylistHistoryEntryResponse;
+import com.mpp.backend.dto.PlaylistRequest;
+import com.mpp.backend.dto.PlaylistResponse;
+import com.mpp.backend.dto.SongResponse;
+import com.mpp.backend.dto.SongStatisticsResponse;
+import com.mpp.backend.dto.StatisticsResponse;
+import com.mpp.backend.mapper.PlaylistMapper;
+import com.mpp.backend.service.FakePlaylistGeneratorService;
+import com.mpp.backend.service.PlaylistService;
+import jakarta.validation.Valid;
+import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.MutationMapping;
+import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.graphql.data.method.annotation.SchemaMapping;
+import org.springframework.stereotype.Controller;
+
+import java.util.Comparator;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Controller
+public class PlaylistGraphqlController {
+
+    private final PlaylistService playlistService;
+    private final PlaylistMapper playlistMapper;
+    private final FakePlaylistGeneratorService fakePlaylistGeneratorService;
+
+    public PlaylistGraphqlController(
+            PlaylistService playlistService,
+            PlaylistMapper playlistMapper,
+            FakePlaylistGeneratorService fakePlaylistGeneratorService
+<span class="nc" id="L36">    ) {</span>
+<span class="nc" id="L37">        this.playlistService = playlistService;</span>
+<span class="nc" id="L38">        this.playlistMapper = playlistMapper;</span>
+<span class="nc" id="L39">        this.fakePlaylistGeneratorService = fakePlaylistGeneratorService;</span>
+<span class="nc" id="L40">    }</span>
+
+    @QueryMapping
+    public PageResponse&lt;PlaylistResponse&gt; playlists(@Argument Integer page, @Argument Integer size) {
+<span class="nc" id="L44">        var playlistPage = playlistService.getAllPlaylists(defaultPage(page), defaultPlaylistSize(size));</span>
+
+<span class="nc" id="L46">        return new PageResponse&lt;&gt;(</span>
+<span class="nc" id="L47">                playlistPage.content().stream().map(playlistMapper::toResponse).toList(),</span>
+<span class="nc" id="L48">                playlistPage.page(),</span>
+<span class="nc" id="L49">                playlistPage.size(),</span>
+<span class="nc" id="L50">                playlistPage.totalElements(),</span>
+<span class="nc" id="L51">                playlistPage.totalPages()</span>
+        );
+    }
+
+    @QueryMapping
+    public PlaylistResponse playlist(@Argument Integer id) {
+<span class="nc" id="L57">        return playlistMapper.toResponse(playlistService.getPlaylistById(id.longValue()));</span>
+    }
+
+    @QueryMapping
+    public PageResponse&lt;PlaylistHistoryEntryResponse&gt; playlistHistory(
+            @Argument Integer playlistId,
+            @Argument Integer page,
+            @Argument Integer size
+    ) {
+<span class="nc" id="L66">        var historyPage = playlistService.getPlaylistHistory(</span>
+<span class="nc" id="L67">                playlistId.longValue(),</span>
+<span class="nc" id="L68">                defaultPage(page),</span>
+<span class="nc" id="L69">                defaultHistorySize(size)</span>
+        );
+
+<span class="nc" id="L72">        return new PageResponse&lt;&gt;(</span>
+<span class="nc" id="L73">                historyPage.content().stream().map(playlistMapper::toResponse).toList(),</span>
+<span class="nc" id="L74">                historyPage.page(),</span>
+<span class="nc" id="L75">                historyPage.size(),</span>
+<span class="nc" id="L76">                historyPage.totalElements(),</span>
+<span class="nc" id="L77">                historyPage.totalPages()</span>
+        );
+    }
+
+    @QueryMapping
+    public StatisticsResponse statistics() {
+<span class="nc" id="L83">        return playlistMapper.toResponse(playlistService.getStatistics());</span>
+    }
+
+    @QueryMapping
+    public GeneratorStatusResponse generatorStatus() {
+<span class="nc" id="L88">        return fakePlaylistGeneratorService.status();</span>
+    }
+
+    @MutationMapping
+    public PlaylistResponse createPlaylist(@Argument(&quot;input&quot;) @Valid PlaylistRequest input) {
+<span class="nc" id="L93">        return playlistMapper.toResponse(playlistService.createPlaylist(input));</span>
+    }
+
+    @MutationMapping
+    public PlaylistResponse updatePlaylist(@Argument Integer id, @Argument(&quot;input&quot;) @Valid PlaylistRequest input) {
+<span class="nc" id="L98">        return playlistMapper.toResponse(playlistService.updatePlaylist(id.longValue(), input));</span>
+    }
+
+    @MutationMapping
+    public Boolean deletePlaylist(@Argument Integer id) {
+<span class="nc" id="L103">        playlistService.deletePlaylist(id.longValue());</span>
+<span class="nc" id="L104">        return true;</span>
+    }
+
+    @MutationMapping
+    public PlaylistResponse restoreHistoryEntry(@Argument Integer playlistId, @Argument Integer historyEntryId) {
+<span class="nc" id="L109">        return playlistMapper.toResponse(</span>
+<span class="nc" id="L110">                playlistService.restoreSnapshot(playlistId.longValue(), historyEntryId.longValue())</span>
+        );
+    }
+
+    @MutationMapping
+    public GeneratorStatusResponse startGenerator(@Argument Integer batchSize, @Argument Integer intervalSeconds) {
+<span class="nc" id="L116">        return fakePlaylistGeneratorService.start(</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                batchSize == null ? 3 : batchSize,</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                intervalSeconds == null ? 5 : intervalSeconds</span>
+        );
+    }
+
+    @MutationMapping
+    public GeneratorStatusResponse stopGenerator() {
+<span class="nc" id="L124">        return fakePlaylistGeneratorService.stop();</span>
+    }
+
+    @SchemaMapping(typeName = &quot;Playlist&quot;, field = &quot;songStatistics&quot;)
+    public SongStatisticsResponse songStatistics(PlaylistResponse playlist) {
+<span class="nc" id="L129">        int totalSongs = playlist.songs().size();</span>
+<span class="nc" id="L130">        int totalDurationSeconds = (int) playlist.songs().stream()</span>
+<span class="nc" id="L131">                .mapToLong(SongResponse::durationSeconds)</span>
+<span class="nc" id="L132">                .sum();</span>
+
+<span class="nc" id="L134">        Set&lt;String&gt; uniqueArtists = playlist.songs().stream()</span>
+<span class="nc" id="L135">                .map(SongResponse::artist)</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                .map(artist -&gt; artist == null ? &quot;&quot; : artist.trim().toLowerCase())</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                .filter(value -&gt; !value.isBlank())</span>
+<span class="nc" id="L138">                .collect(Collectors.toSet());</span>
+
+<span class="nc" id="L140">        SongResponse longestSong = playlist.songs().stream()</span>
+<span class="nc" id="L141">                .max(Comparator.comparingInt(SongResponse::durationSeconds))</span>
+<span class="nc" id="L142">                .orElse(null);</span>
+
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        double averageSongDurationSeconds = totalSongs == 0</span>
+<span class="nc" id="L145">                ? 0</span>
+<span class="nc" id="L146">                : round((double) totalDurationSeconds / totalSongs);</span>
+
+<span class="nc" id="L148">        return new SongStatisticsResponse(</span>
+                totalSongs,
+<span class="nc" id="L150">                uniqueArtists.size(),</span>
+                averageSongDurationSeconds,
+                totalDurationSeconds,
+                longestSong
+        );
+    }
+
+    private int defaultPage(Integer page) {
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        return page == null ? 0 : page;</span>
+    }
+
+    private int defaultPlaylistSize(Integer size) {
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        return size == null ? 12 : size;</span>
+    }
+
+    private int defaultHistorySize(Integer size) {
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        return size == null ? 10 : size;</span>
+    }
+
+    private double round(double value) {
+<span class="nc" id="L170">        return Math.round(value * 100.0) / 100.0;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

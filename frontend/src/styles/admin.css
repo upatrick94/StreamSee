@@ -1,0 +1,70 @@
+.admin-page {
+    min-height: 100vh;
+    background:
+            radial-gradient(circle at top left, rgba(199, 94, 52, 0.12), transparent 30%),
+            linear-gradient(180deg, #f6f2eb 0%, #eef2f5 100%);
+}
+
+.admin-shell {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+}
+
+.admin-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+}
+
+.admin-header p {
+    margin-top: 0.5rem;
+    color: #5d646d;
+}
+
+.admin-error {
+    color: #8c1d1d;
+    margin: 1rem 0;
+}
+
+.admin-grid {
+    display: grid;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.admin-card {
+    padding: 1.4rem;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid #ddd7cf;
+    box-shadow: 0 24px 40px rgba(42, 48, 55, 0.08);
+}
+
+.admin-card h2 {
+    margin-top: 0;
+}
+
+.admin-table-wrap {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Inter, Arial, sans-serif;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 0.85rem 0.7rem;
+    border-bottom: 1px solid #ece7e0;
+    text-align: left;
+    vertical-align: top;
+}
+
+.admin-table th {
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #69707a;
+}

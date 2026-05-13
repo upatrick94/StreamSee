@@ -1,0 +1,141 @@
+.navbar {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 26px 32px 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 28px;
+}
+
+.navbar-admin {
+    padding-left: 12px;
+}
+
+.logo-wrapper {
+    position: relative;
+    justify-self: start;
+}
+
+.logo {
+    width: 74px;
+    height: auto;
+    display: block;
+    cursor: pointer;
+}
+
+.logo-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    min-width: 148px;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 1000;
+}
+
+.logo-dropdown button {
+    width: 100%;
+    min-height: 36px;
+    border-radius: 10px;
+    border: 1px solid #000000;
+    background: #444444;
+    color: #ffffff;
+    font-family: Inter, Arial, sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 18px 46px;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #444444;
+    font-family: Sora, Arial, sans-serif;
+    font-size: 24px;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.nav-links a.active {
+    text-decoration: underline;
+    text-underline-offset: 6px;
+}
+
+@media (max-width: 1100px) {
+    .navbar {
+        padding: 22px 22px 0;
+        gap: 18px;
+    }
+
+    .navbar-admin {
+        padding-left: 8px;
+    }
+
+    .nav-links {
+        gap: 14px 28px;
+    }
+
+    .nav-links a {
+        font-size: 19px;
+    }
+}
+
+@media (max-width: 780px) {
+    .navbar {
+        max-width: 100%;
+        padding: 20px 16px 0;
+        grid-template-columns: 1fr;
+        justify-items: center;
+    }
+
+    .navbar-admin {
+        padding-left: 16px;
+    }
+
+    .logo-wrapper {
+        justify-self: center;
+    }
+
+    .logo-dropdown {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .nav-links {
+        width: 100%;
+        gap: 12px 18px;
+    }
+
+    .nav-links a {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        padding: 16px 12px 0;
+    }
+
+    .navbar-admin {
+        padding-left: 12px;
+    }
+
+    .logo {
+        width: 64px;
+    }
+
+    .nav-links a {
+        font-size: 14px;
+    }
+}

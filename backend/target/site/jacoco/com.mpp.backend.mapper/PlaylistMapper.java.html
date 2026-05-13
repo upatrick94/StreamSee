@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PlaylistMapper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">playlist-backend</a> &gt; <a href="index.source.html" class="el_package">com.mpp.backend.mapper</a> &gt; <span class="el_source">PlaylistMapper.java</span></div><h1>PlaylistMapper.java</h1><pre class="source lang-java linenums">package com.mpp.backend.mapper;
+
+import com.mpp.backend.dto.GenreCountResponse;
+import com.mpp.backend.dto.PlaylistHistoryEntryResponse;
+import com.mpp.backend.dto.PlaylistRequest;
+import com.mpp.backend.dto.PlaylistResponse;
+import com.mpp.backend.dto.PlaylistSummaryResponse;
+import com.mpp.backend.dto.SongRequest;
+import com.mpp.backend.dto.SongResponse;
+import com.mpp.backend.dto.StatisticsResponse;
+import com.mpp.backend.model.Playlist;
+import com.mpp.backend.model.PlaylistHistoryEntry;
+import com.mpp.backend.model.PlaylistStatistics;
+import com.mpp.backend.model.Song;
+import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+
+@Component
+<span class="fc" id="L24">public class PlaylistMapper {</span>
+
+    public Playlist toNewPlaylist(PlaylistRequest request, long playlistId, AtomicLong songIdSequence, Instant now) {
+<span class="fc" id="L27">        return new Playlist(</span>
+                playlistId,
+<span class="fc" id="L29">                request.name().trim(),</span>
+<span class="fc" id="L30">                request.creator().trim(),</span>
+<span class="fc" id="L31">                normalizeCoverUrl(request.coverUrl()),</span>
+<span class="fc" id="L32">                request.description().trim(),</span>
+<span class="fc" id="L33">                sanitizeGenres(request.genres()),</span>
+<span class="fc" id="L34">                request.songs().stream()</span>
+<span class="fc" id="L35">                        .map(song -&gt; toSong(song, songIdSequence.incrementAndGet()))</span>
+<span class="fc" id="L36">                        .toList(),</span>
+                now,
+                now
+        );
+    }
+
+    public Playlist toUpdatedPlaylist(Playlist current, PlaylistRequest request, AtomicLong songIdSequence, Instant now) {
+<span class="fc" id="L43">        Set&lt;Long&gt; existingSongIds = current.songs().stream()</span>
+<span class="fc" id="L44">                .map(Song::id)</span>
+<span class="fc" id="L45">                .collect(Collectors.toSet());</span>
+
+<span class="fc" id="L47">        return new Playlist(</span>
+<span class="fc" id="L48">                current.id(),</span>
+<span class="fc" id="L49">                request.name().trim(),</span>
+<span class="fc" id="L50">                request.creator().trim(),</span>
+<span class="fc" id="L51">                normalizeCoverUrl(request.coverUrl()),</span>
+<span class="fc" id="L52">                request.description().trim(),</span>
+<span class="fc" id="L53">                sanitizeGenres(request.genres()),</span>
+<span class="fc" id="L54">                request.songs().stream()</span>
+<span class="fc" id="L55">                        .map(song -&gt; toSong(song, resolveSongId(song, existingSongIds, songIdSequence)))</span>
+<span class="fc" id="L56">                        .toList(),</span>
+<span class="fc" id="L57">                current.createdAt(),</span>
+                now
+        );
+    }
+
+    public PlaylistResponse toResponse(Playlist playlist) {
+<span class="fc" id="L63">        return new PlaylistResponse(</span>
+<span class="fc" id="L64">                playlist.id(),</span>
+<span class="fc" id="L65">                playlist.name(),</span>
+<span class="fc" id="L66">                playlist.creator(),</span>
+<span class="fc" id="L67">                playlist.coverUrl(),</span>
+<span class="fc" id="L68">                playlist.description(),</span>
+<span class="fc" id="L69">                playlist.genres(),</span>
+<span class="fc" id="L70">                playlist.songs().stream().map(this::toResponse).toList(),</span>
+<span class="fc" id="L71">                playlist.songs().size(),</span>
+<span class="fc" id="L72">                totalDuration(playlist),</span>
+<span class="fc" id="L73">                playlist.createdAt(),</span>
+<span class="fc" id="L74">                playlist.updatedAt()</span>
+        );
+    }
+
+    public PlaylistHistoryEntryResponse toResponse(PlaylistHistoryEntry historyEntry) {
+<span class="fc" id="L79">        return new PlaylistHistoryEntryResponse(</span>
+<span class="fc" id="L80">                historyEntry.id(),</span>
+<span class="fc" id="L81">                historyEntry.action(),</span>
+<span class="fc" id="L82">                historyEntry.highlight(),</span>
+<span class="fc" id="L83">                historyEntry.createdAt(),</span>
+<span class="fc" id="L84">                toResponse(historyEntry.snapshot())</span>
+        );
+    }
+
+    public StatisticsResponse toResponse(PlaylistStatistics statistics) {
+<span class="fc" id="L89">        return new StatisticsResponse(</span>
+<span class="fc" id="L90">                statistics.totalPlaylists(),</span>
+<span class="fc" id="L91">                statistics.totalSongs(),</span>
+<span class="fc" id="L92">                statistics.totalDurationSeconds(),</span>
+<span class="fc" id="L93">                statistics.averageSongsPerPlaylist(),</span>
+<span class="fc" id="L94">                statistics.averageDurationSecondsPerPlaylist(),</span>
+<span class="fc" id="L95">                statistics.topGenres().stream()</span>
+<span class="fc" id="L96">                        .map(genre -&gt; new GenreCountResponse(genre.genre(), genre.count()))</span>
+<span class="fc" id="L97">                        .toList(),</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">                statistics.longestPlaylist() == null</span>
+<span class="nc" id="L99">                        ? null</span>
+<span class="fc" id="L100">                        : new PlaylistSummaryResponse(</span>
+<span class="fc" id="L101">                        statistics.longestPlaylist().id(),</span>
+<span class="fc" id="L102">                        statistics.longestPlaylist().name(),</span>
+<span class="fc" id="L103">                        statistics.longestPlaylist().creator(),</span>
+<span class="fc" id="L104">                        statistics.longestPlaylist().songsCount(),</span>
+<span class="fc" id="L105">                        statistics.longestPlaylist().totalDurationSeconds()</span>
+                )
+        );
+    }
+
+    private long resolveSongId(SongRequest request, Set&lt;Long&gt; existingSongIds, AtomicLong songIdSequence) {
+<span class="fc" id="L111">        Long requestedId = request.id();</span>
+
+<span class="pc bpc" id="L113" title="3 of 4 branches missed.">        if (requestedId != null &amp;&amp; existingSongIds.contains(requestedId)) {</span>
+<span class="nc" id="L114">            return requestedId;</span>
+        }
+
+<span class="fc" id="L117">        return songIdSequence.incrementAndGet();</span>
+    }
+
+    private Song toSong(SongRequest request, long songId) {
+<span class="fc" id="L121">        return new Song(</span>
+                songId,
+<span class="fc" id="L123">                request.title().trim(),</span>
+<span class="fc" id="L124">                request.artist().trim(),</span>
+<span class="fc" id="L125">                request.durationSeconds()</span>
+        );
+    }
+
+    private SongResponse toResponse(Song song) {
+<span class="fc" id="L130">        return new SongResponse(song.id(), song.title(), song.artist(), song.durationSeconds());</span>
+    }
+
+    private List&lt;String&gt; sanitizeGenres(List&lt;String&gt; genres) {
+<span class="fc" id="L134">        return genres.stream()</span>
+<span class="fc" id="L135">                .map(String::trim)</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">                .filter(value -&gt; !value.isBlank())</span>
+<span class="fc" id="L137">                .distinct()</span>
+<span class="fc" id="L138">                .toList();</span>
+    }
+
+    private String normalizeCoverUrl(String coverUrl) {
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        return coverUrl == null ? &quot;&quot; : coverUrl.trim();</span>
+    }
+
+    private long totalDuration(Playlist playlist) {
+<span class="fc" id="L146">        return playlist.songs().stream()</span>
+<span class="fc" id="L147">                .mapToLong(Song::durationSeconds)</span>
+<span class="fc" id="L148">                .sum();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

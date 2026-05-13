@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FakePlaylistGeneratorService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">playlist-backend</a> &gt; <a href="index.source.html" class="el_package">com.mpp.backend.service</a> &gt; <span class="el_source">FakePlaylistGeneratorService.java</span></div><h1>FakePlaylistGeneratorService.java</h1><pre class="source lang-java linenums">package com.mpp.backend.service;
+
+import com.github.javafaker.Faker;
+import com.mpp.backend.dto.GeneratorBatchEventResponse;
+import com.mpp.backend.dto.GeneratorStatusResponse;
+import com.mpp.backend.dto.PlaylistRequest;
+import com.mpp.backend.dto.PlaylistResponse;
+import com.mpp.backend.dto.SongRequest;
+import com.mpp.backend.dto.StatisticsResponse;
+import com.mpp.backend.mapper.PlaylistMapper;
+import jakarta.annotation.PreDestroy;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+@Service
+public class FakePlaylistGeneratorService {
+
+    private final PlaylistService playlistService;
+    private final PlaylistMapper playlistMapper;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final ScheduledExecutorService scheduler;
+<span class="nc" id="L35">    private final Faker faker = new Faker(Locale.ENGLISH);</span>
+
+<span class="nc" id="L37">    private final AtomicBoolean running = new AtomicBoolean(false);</span>
+
+    private volatile ScheduledFuture&lt;?&gt; scheduledTask;
+<span class="nc" id="L40">    private volatile int batchSize = 3;</span>
+<span class="nc" id="L41">    private volatile int intervalSeconds = 5;</span>
+
+    public FakePlaylistGeneratorService(
+            PlaylistService playlistService,
+            PlaylistMapper playlistMapper,
+            SimpMessagingTemplate messagingTemplate
+<span class="nc" id="L47">    ) {</span>
+<span class="nc" id="L48">        this.playlistService = playlistService;</span>
+<span class="nc" id="L49">        this.playlistMapper = playlistMapper;</span>
+<span class="nc" id="L50">        this.messagingTemplate = messagingTemplate;</span>
+<span class="nc" id="L51">        this.scheduler = Executors.newSingleThreadScheduledExecutor(runnable -&gt; {</span>
+<span class="nc" id="L52">            Thread thread = new Thread(runnable, &quot;fake-playlist-generator&quot;);</span>
+<span class="nc" id="L53">            thread.setDaemon(true);</span>
+<span class="nc" id="L54">            return thread;</span>
+        });
+<span class="nc" id="L56">    }</span>
+
+    public synchronized GeneratorStatusResponse start(int requestedBatchSize, int requestedIntervalSeconds) {
+<span class="nc" id="L59">        batchSize = requestedBatchSize;</span>
+<span class="nc" id="L60">        intervalSeconds = requestedIntervalSeconds;</span>
+
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (running.get()) {</span>
+<span class="nc" id="L63">            return status();</span>
+        }
+
+<span class="nc" id="L66">        running.set(true);</span>
+<span class="nc" id="L67">        scheduledTask = scheduler.scheduleWithFixedDelay(</span>
+                this::generateBatchSafely,
+                0,
+                intervalSeconds,
+                TimeUnit.SECONDS
+        );
+
+<span class="nc" id="L74">        return status();</span>
+    }
+
+    public synchronized GeneratorStatusResponse stop() {
+<span class="nc" id="L78">        running.set(false);</span>
+
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if (scheduledTask != null) {</span>
+<span class="nc" id="L81">            scheduledTask.cancel(false);</span>
+<span class="nc" id="L82">            scheduledTask = null;</span>
+        }
+
+<span class="nc" id="L85">        return status();</span>
+    }
+
+    public GeneratorStatusResponse status() {
+<span class="nc" id="L89">        return new GeneratorStatusResponse(running.get(), batchSize, intervalSeconds);</span>
+    }
+
+    private void generateBatchSafely() {
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        if (!running.get()) {</span>
+<span class="nc" id="L94">            return;</span>
+        }
+
+        try {
+<span class="nc" id="L98">            generateBatch();</span>
+<span class="nc" id="L99">        } catch (Exception exception) {</span>
+<span class="nc" id="L100">            exception.printStackTrace();</span>
+<span class="nc" id="L101">        }</span>
+<span class="nc" id="L102">    }</span>
+
+    private void generateBatch() {
+<span class="nc" id="L105">        List&lt;PlaylistResponse&gt; createdPlaylists = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        for (int index = 0; index &lt; batchSize; index += 1) {</span>
+<span class="nc" id="L108">            PlaylistRequest request = buildPlaylistRequest();</span>
+<span class="nc" id="L109">            PlaylistResponse response = playlistMapper.toResponse(playlistService.createPlaylist(request));</span>
+<span class="nc" id="L110">            createdPlaylists.add(response);</span>
+        }
+
+<span class="nc" id="L113">        StatisticsResponse statistics = playlistMapper.toResponse(playlistService.getStatistics());</span>
+
+<span class="nc" id="L115">        messagingTemplate.convertAndSend(</span>
+                &quot;/topic/playlists-updated&quot;,
+                new GeneratorBatchEventResponse(
+                        &quot;BATCH_CREATED&quot;,
+<span class="nc" id="L119">                        createdPlaylists.size(),</span>
+<span class="nc" id="L120">                        statistics.totalPlaylists(),</span>
+                        createdPlaylists,
+                        statistics,
+<span class="nc" id="L123">                        Instant.now()</span>
+                )
+        );
+<span class="nc" id="L126">    }</span>
+
+    private PlaylistRequest buildPlaylistRequest() {
+<span class="nc" id="L129">        return new PlaylistRequest(</span>
+<span class="nc" id="L130">                buildPlaylistName(),</span>
+<span class="nc" id="L131">                faker.name().fullName(),</span>
+<span class="nc" id="L132">                buildCoverUrl(),</span>
+<span class="nc" id="L133">                buildDescription(),</span>
+<span class="nc" id="L134">                buildGenres(),</span>
+<span class="nc" id="L135">                buildSongs()</span>
+        );
+    }
+
+    private String buildPlaylistName() {
+<span class="nc" id="L140">        String suffix = faker.options().option(&quot;Drive&quot;, &quot;Flow&quot;, &quot;Pulse&quot;, &quot;Mix&quot;, &quot;Session&quot;, &quot;Collection&quot;);</span>
+<span class="nc" id="L141">        return faker.music().genre() + &quot; &quot; + suffix;</span>
+    }
+
+    private String buildCoverUrl() {
+<span class="nc" id="L145">        return &quot;https://picsum.photos/seed/&quot; + UUID.randomUUID() + &quot;/400/400&quot;;</span>
+    }
+
+    private String buildDescription() {
+<span class="nc" id="L149">        return faker.lorem().sentence(14);</span>
+    }
+
+    private List&lt;String&gt; buildGenres() {
+<span class="nc" id="L153">        Set&lt;String&gt; genres = new LinkedHashSet&lt;&gt;();</span>
+<span class="nc" id="L154">        int genresCount = faker.number().numberBetween(1, 4);</span>
+
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        while (genres.size() &lt; genresCount) {</span>
+<span class="nc" id="L157">            genres.add(faker.music().genre());</span>
+        }
+
+<span class="nc" id="L160">        return List.copyOf(genres);</span>
+    }
+
+    private List&lt;SongRequest&gt; buildSongs() {
+<span class="nc" id="L164">        int songsCount = faker.number().numberBetween(2, 6);</span>
+<span class="nc" id="L165">        List&lt;SongRequest&gt; songs = new ArrayList&lt;&gt;(songsCount);</span>
+
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        for (int index = 0; index &lt; songsCount; index += 1) {</span>
+<span class="nc" id="L168">            songs.add(new SongRequest(</span>
+                    null,
+<span class="nc" id="L170">                    faker.book().title(),</span>
+<span class="nc" id="L171">                    faker.rockBand().name(),</span>
+<span class="nc" id="L172">                    faker.number().numberBetween(120, 361)</span>
+            ));
+        }
+
+<span class="nc" id="L176">        return songs;</span>
+    }
+
+    @PreDestroy
+    public void shutdown() {
+<span class="nc" id="L181">        stop();</span>
+<span class="nc" id="L182">        scheduler.shutdownNow();</span>
+<span class="nc" id="L183">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

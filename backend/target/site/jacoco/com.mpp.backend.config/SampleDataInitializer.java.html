@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SampleDataInitializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">playlist-backend</a> &gt; <a href="index.source.html" class="el_package">com.mpp.backend.config</a> &gt; <span class="el_source">SampleDataInitializer.java</span></div><h1>SampleDataInitializer.java</h1><pre class="source lang-java linenums">package com.mpp.backend.config;
+
+import com.mpp.backend.model.Playlist;
+import com.mpp.backend.model.Song;
+import com.mpp.backend.service.PlaylistService;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.util.List;
+
+@Component
+public class SampleDataInitializer implements ApplicationRunner {
+
+    private final PlaylistService playlistService;
+
+<span class="nc" id="L18">    public SampleDataInitializer(PlaylistService playlistService) {</span>
+<span class="nc" id="L19">        this.playlistService = playlistService;</span>
+<span class="nc" id="L20">    }</span>
+
+    @Override
+    public void run(ApplicationArguments args) {
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        if (playlistService.getStatistics().totalPlaylists() &gt; 0) {</span>
+<span class="nc" id="L25">            return;</span>
+        }
+
+<span class="nc" id="L28">        playlistService.seedPlaylist(new Playlist(</span>
+                1L,
+                &quot;Late Night Drive&quot;,
+                &quot;Patrick&quot;,
+                &quot;https://i.pinimg.com/736x/4e/7a/23/4e7a239fef280d6cb60865c284308a91.jpg&quot;,
+                &quot;Music for late-night drives, quiet roads, and city lights.&quot;,
+<span class="nc" id="L34">                List.of(&quot;Synthwave&quot;, &quot;Chillwave&quot;, &quot;Electronic&quot;),</span>
+<span class="nc" id="L35">                List.of(</span>
+                        new Song(11L, &quot;Nightcall&quot;, &quot;Kavinsky&quot;, 257),
+                        new Song(12L, &quot;Midnight City&quot;, &quot;M83&quot;, 244),
+                        new Song(13L, &quot;After Dark&quot;, &quot;Mr. Kitty&quot;, 290)
+                ),
+<span class="nc" id="L40">                Instant.parse(&quot;2026-03-02T10:00:00Z&quot;),</span>
+<span class="nc" id="L41">                Instant.parse(&quot;2026-03-10T10:00:00Z&quot;)</span>
+        ));
+
+<span class="nc" id="L44">        playlistService.seedPlaylist(new Playlist(</span>
+                2L,
+                &quot;Workout Music&quot;,
+                &quot;Andrei&quot;,
+                &quot;https://i.pinimg.com/736x/1c/ec/ce/1ceccef3eccc82a65f8ec44e25b539ff.jpg&quot;,
+                &quot;High-energy tracks for gym sessions, running, and training.&quot;,
+<span class="nc" id="L50">                List.of(&quot;Hip-Hop&quot;, &quot;EDM&quot;, &quot;Pop&quot;),</span>
+<span class="nc" id="L51">                List.of(</span>
+                        new Song(21L, &quot;POWER&quot;, &quot;Kanye West&quot;, 292),
+                        new Song(22L, &quot;Till I Collapse&quot;, &quot;Eminem&quot;, 298),
+                        new Song(23L, &quot;Titanium&quot;, &quot;David Guetta&quot;, 245)
+                ),
+<span class="nc" id="L56">                Instant.parse(&quot;2026-02-20T10:00:00Z&quot;),</span>
+<span class="nc" id="L57">                Instant.parse(&quot;2026-03-14T10:00:00Z&quot;)</span>
+        ));
+<span class="nc" id="L59">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

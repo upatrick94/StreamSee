@@ -1,0 +1,115 @@
+type Query {
+    playlists(page: Int = 0, size: Int = 12): PlaylistPage!
+    playlist(id: Int!): Playlist!
+    playlistHistory(playlistId: Int!, page: Int = 0, size: Int = 10): PlaylistHistoryPage!
+    statistics: Statistics!
+    generatorStatus: GeneratorStatus!
+}
+
+type Mutation {
+    createPlaylist(input: PlaylistInput!): Playlist!
+    updatePlaylist(id: Int!, input: PlaylistInput!): Playlist!
+    deletePlaylist(id: Int!): Boolean!
+    restoreHistoryEntry(playlistId: Int!, historyEntryId: Int!): Playlist!
+    startGenerator(batchSize: Int = 3, intervalSeconds: Int = 5): GeneratorStatus!
+    stopGenerator: GeneratorStatus!
+}
+
+type PlaylistPage {
+    content: [Playlist!]!
+    page: Int!
+    size: Int!
+    totalElements: Int!
+    totalPages: Int!
+}
+
+type PlaylistHistoryPage {
+    content: [PlaylistHistoryEntry!]!
+    page: Int!
+    size: Int!
+    totalElements: Int!
+    totalPages: Int!
+}
+
+type Playlist {
+    id: Int!
+    name: String!
+    creator: String!
+    coverUrl: String!
+    description: String!
+    genres: [String!]!
+    songs: [Song!]!
+    songsCount: Int!
+    totalDurationSeconds: Int!
+    createdAt: String!
+    updatedAt: String!
+    songStatistics: SongStatistics!
+}
+
+type Song {
+    id: Int!
+    title: String!
+    artist: String!
+    durationSeconds: Int!
+}
+
+type SongStatistics {
+    totalSongs: Int!
+    uniqueArtists: Int!
+    averageSongDurationSeconds: Float!
+    totalDurationSeconds: Int!
+    longestSong: Song
+}
+
+type PlaylistHistoryEntry {
+    id: Int!
+    action: String!
+    highlight: String!
+    createdAt: String!
+    snapshot: Playlist!
+}
+
+type Statistics {
+    totalPlaylists: Int!
+    totalSongs: Int!
+    totalDurationSeconds: Int!
+    averageSongsPerPlaylist: Float!
+    averageDurationSecondsPerPlaylist: Float!
+    topGenres: [GenreCount!]!
+    longestPlaylist: PlaylistSummary
+}
+
+type GenreCount {
+    genre: String!
+    count: Int!
+}
+
+type PlaylistSummary {
+    id: Int!
+    name: String!
+    creator: String!
+    songsCount: Int!
+    totalDurationSeconds: Int!
+}
+
+type GeneratorStatus {
+    running: Boolean!
+    batchSize: Int!
+    intervalSeconds: Int!
+}
+
+input PlaylistInput {
+    name: String!
+    creator: String!
+    coverUrl: String
+    description: String!
+    genres: [String!]!
+    songs: [SongInput!]!
+}
+
+input SongInput {
+    id: Int
+    title: String!
+    artist: String!
+    durationSeconds: Int!
+}

@@ -1,0 +1,9 @@
+com/mpp/backend/service/ChatServiceTest.class
+com/mpp/backend/controller/AdminControllerTest.class
+com/mpp/backend/service/AuditLogServiceTest.class
+com/mpp/backend/controller/ChatControllerTest.class
+com/mpp/backend/controller/AuthControllerTest.class
+com/mpp/backend/service/PlaylistServiceTest.class
+com/mpp/backend/integration/PlaylistPersistenceIntegrationTest.class
+com/mpp/backend/controller/PlaylistControllerTest.class
+com/mpp/backend/service/AuthServiceTest.class

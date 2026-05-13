@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GraphqlExceptionResolver.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">playlist-backend</a> &gt; <a href="index.source.html" class="el_package">com.mpp.backend.graphql</a> &gt; <span class="el_source">GraphqlExceptionResolver.java</span></div><h1>GraphqlExceptionResolver.java</h1><pre class="source lang-java linenums">package com.mpp.backend.graphql;
+
+import com.mpp.backend.error.ResourceNotFoundException;
+import graphql.GraphQLError;
+import graphql.GraphqlErrorBuilder;
+import graphql.schema.DataFetchingEnvironment;
+import jakarta.validation.ConstraintViolationException;
+import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
+import org.springframework.graphql.execution.ErrorType;
+import org.springframework.stereotype.Component;
+import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+
+import java.util.List;
+
+@Component
+<span class="nc" id="L18">public class GraphqlExceptionResolver extends DataFetcherExceptionResolverAdapter {</span>
+
+    @Override
+    protected GraphQLError resolveToSingleError(Throwable ex, DataFetchingEnvironment env) {
+<span class="nc bnc" id="L22" title="All 2 branches missed.">        if (ex instanceof ResourceNotFoundException) {</span>
+<span class="nc" id="L23">            return error(env, ErrorType.NOT_FOUND, ex.getMessage());</span>
+        }
+
+<span class="nc bnc" id="L26" title="All 2 branches missed.">        if (ex instanceof IllegalArgumentException) {</span>
+<span class="nc" id="L27">            return error(env, ErrorType.BAD_REQUEST, ex.getMessage());</span>
+        }
+
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (ex instanceof ConstraintViolationException constraintViolationException) {</span>
+<span class="nc" id="L31">            String details = constraintViolationException.getConstraintViolations().stream()</span>
+<span class="nc" id="L32">                    .map(violation -&gt; violation.getPropertyPath() + &quot;: &quot; + violation.getMessage())</span>
+<span class="nc" id="L33">                    .reduce((left, right) -&gt; left + &quot; | &quot; + right)</span>
+<span class="nc" id="L34">                    .orElse(&quot;Validation failed.&quot;);</span>
+
+<span class="nc" id="L36">            return error(env, ErrorType.BAD_REQUEST, details);</span>
+        }
+
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (ex instanceof BindException bindException) {</span>
+<span class="nc" id="L40">            return error(env, ErrorType.BAD_REQUEST, joinBindingErrors(bindException.getFieldErrors()));</span>
+        }
+
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (ex instanceof MethodArgumentNotValidException methodArgumentNotValidException) {</span>
+<span class="nc" id="L44">            return error(</span>
+                    env,
+                    ErrorType.BAD_REQUEST,
+<span class="nc" id="L47">                    joinBindingErrors(methodArgumentNotValidException.getBindingResult().getFieldErrors())</span>
+            );
+        }
+
+<span class="nc" id="L51">        return error(env, ErrorType.INTERNAL_ERROR, &quot;Unexpected server error.&quot;);</span>
+    }
+
+    private GraphQLError error(DataFetchingEnvironment env, ErrorType type, String message) {
+<span class="nc" id="L55">        return GraphqlErrorBuilder.newError(env)</span>
+<span class="nc" id="L56">                .errorType(type)</span>
+<span class="nc" id="L57">                .message(message)</span>
+<span class="nc" id="L58">                .build();</span>
+    }
+
+    private String joinBindingErrors(List&lt;FieldError&gt; fieldErrors) {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (fieldErrors.isEmpty()) {</span>
+<span class="nc" id="L63">            return &quot;Validation failed.&quot;;</span>
+        }
+
+<span class="nc" id="L66">        return fieldErrors.stream()</span>
+<span class="nc" id="L67">                .map(fieldError -&gt; fieldError.getField() + &quot;: &quot; + fieldError.getDefaultMessage())</span>
+<span class="nc" id="L68">                .reduce((left, right) -&gt; left + &quot; | &quot; + right)</span>
+<span class="nc" id="L69">                .orElse(&quot;Validation failed.&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

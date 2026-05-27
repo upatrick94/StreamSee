@@ -1,47 +1,29 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { requestLoginCodeApi } from "../api/authApi";
+import { requestPasswordResetCodeApi } from "../api/authApi";
 import "../styles/auth.css";
 
-function LoginPage() {
+function ForgotPasswordPage() {
     const [formData, setFormData] = useState({
         username: "",
-        password: "",
         securityAnswer: "",
+        newPassword: "",
+        confirmPassword: "",
     });
-    const [errors, setErrors] = useState({
-        username: "",
-        password: "",
-        securityAnswer: "",
-    });
-    const [showPassword, setShowPassword] = useState(false);
+    const [errors, setErrors] = useState({});
     const [submitError, setSubmitError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = (event) => {
         const { name, value } = event.target;
-
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
-
-        setErrors((prev) => ({
-            ...prev,
-            [name]: "",
-        }));
-
+        setFormData((prev) => ({ ...prev, [name]: value }));
+        setErrors((prev) => ({ ...prev, [name]: "" }));
         setSubmitError("");
     };
 
     const validateForm = () => {
-        const nextErrors = {
-            username: "",
-            password: "",
-            securityAnswer: "",
-        };
-
+        const nextErrors = {};
         let valid = true;
 
         if (!formData.username.trim()) {
@@ -49,13 +31,21 @@ function LoginPage() {
             valid = false;
         }
 
-        if (!formData.password.trim()) {
-            nextErrors.password = "Please enter your password.";
+        if (!formData.securityAnswer.trim()) {
+            nextErrors.securityAnswer = "Please enter your security answer.";
             valid = false;
         }
 
-        if (!formData.securityAnswer.trim()) {
-            nextErrors.securityAnswer = "Please enter your security answer.";
+        if (!formData.newPassword.trim()) {
+            nextErrors.newPassword = "Please enter a new password.";
+            valid = false;
+        }
+
+        if (!formData.confirmPassword.trim()) {
+            nextErrors.confirmPassword = "Please confirm the new password.";
+            valid = false;
+        } else if (formData.newPassword !== formData.confirmPassword) {
+            nextErrors.confirmPassword = "Passwords do not match.";
             valid = false;
         }
 
@@ -74,21 +64,21 @@ function LoginPage() {
             setIsSubmitting(true);
             setSubmitError("");
 
-            const result = await requestLoginCodeApi(
+            const result = await requestPasswordResetCodeApi(
                 formData.username.trim(),
-                formData.password,
-                formData.securityAnswer.trim()
+                formData.securityAnswer.trim(),
+                formData.newPassword
             );
 
             const params = new URLSearchParams({
-                flow: "login",
+                flow: "reset",
                 challengeId: result.challengeId,
                 hint: result.deliveryHint || "",
             });
 
             window.location.assign(`/auth-code?${params.toString()}`);
         } catch (error) {
-            setSubmitError(error.message || "Login failed.");
+            setSubmitError(error.message || "Password reset failed.");
         } finally {
             setIsSubmitting(false);
         }
@@ -100,7 +90,7 @@ function LoginPage() {
 
             <main className="auth-main">
                 <form className="auth-card" onSubmit={handleSubmit} noValidate>
-                    <h1 className="auth-title">Log In</h1>
+                    <h1 className="auth-title">Reset Password</h1>
 
                     <div className="auth-field">
                         <label htmlFor="username" className="auth-label">Username</label>
@@ -111,32 +101,8 @@ function LoginPage() {
                             value={formData.username}
                             onChange={handleChange}
                             className={`auth-input ${errors.username ? "input-error" : ""}`}
-                            autoComplete="username"
                         />
                         {errors.username && <p className="auth-error">{errors.username}</p>}
-                    </div>
-
-                    <div className="auth-field">
-                        <label htmlFor="password" className="auth-label">Password</label>
-                        <div className="auth-password-wrapper">
-                            <input
-                                id="password"
-                                name="password"
-                                type={showPassword ? "text" : "password"}
-                                value={formData.password}
-                                onChange={handleChange}
-                                className={`auth-input ${errors.password ? "input-error" : ""}`}
-                                autoComplete="current-password"
-                            />
-                            <button
-                                type="button"
-                                className="auth-password-toggle"
-                                onClick={() => setShowPassword((prev) => !prev)}
-                            >
-                                {showPassword ? "Hide" : "Show"}
-                            </button>
-                        </div>
-                        {errors.password && <p className="auth-error">{errors.password}</p>}
                     </div>
 
                     <div className="auth-field">
@@ -148,9 +114,34 @@ function LoginPage() {
                             value={formData.securityAnswer}
                             onChange={handleChange}
                             className={`auth-input ${errors.securityAnswer ? "input-error" : ""}`}
-                            autoComplete="off"
                         />
                         {errors.securityAnswer && <p className="auth-error">{errors.securityAnswer}</p>}
+                    </div>
+
+                    <div className="auth-field">
+                        <label htmlFor="newPassword" className="auth-label">New Password</label>
+                        <input
+                            id="newPassword"
+                            name="newPassword"
+                            type="password"
+                            value={formData.newPassword}
+                            onChange={handleChange}
+                            className={`auth-input ${errors.newPassword ? "input-error" : ""}`}
+                        />
+                        {errors.newPassword && <p className="auth-error">{errors.newPassword}</p>}
+                    </div>
+
+                    <div className="auth-field">
+                        <label htmlFor="confirmPassword" className="auth-label">Confirm New Password</label>
+                        <input
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            type="password"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            className={`auth-input ${errors.confirmPassword ? "input-error" : ""}`}
+                        />
+                        {errors.confirmPassword && <p className="auth-error">{errors.confirmPassword}</p>}
                     </div>
 
                     <button type="submit" className="auth-button" disabled={isSubmitting}>
@@ -159,18 +150,13 @@ function LoginPage() {
 
                     {submitError && <p className="auth-error">{submitError}</p>}
 
-                    <div className="auth-link auth-link-muted">
-                        <p>
-                            No account yet? <Link className="auth-link-inline" to="/register">Create one</Link>
-                        </p>
-                        <p>
-                            Forgot password? <Link className="auth-link-inline" to="/forgot-password">Reset it</Link>
-                        </p>
-                    </div>
+                    <p className="auth-link auth-link-muted">
+                        Back to <Link className="auth-link-inline" to="/login">Log in</Link>
+                    </p>
                 </form>
             </main>
         </div>
     );
 }
 
-export default LoginPage;
+export default ForgotPasswordPage;

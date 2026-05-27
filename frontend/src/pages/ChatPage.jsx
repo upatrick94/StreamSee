@@ -25,9 +25,21 @@ function writeChatCache(cache) {
     window.localStorage.setItem(CHAT_CACHE_KEY, JSON.stringify(cache));
 }
 
+function getCachedMessages(room) {
+    const cache = readChatCache();
+    return cache[room] || [];
+}
+
+function isOptimisticMessage(message) {
+    return typeof message.id === "string" && message.id.startsWith("local-");
+}
+
 function buildMessageKey(message) {
+    if (message.id && !isOptimisticMessage(message)) {
+        return `server:${message.id}`;
+    }
+
     return [
-        message.id ?? "",
         message.room ?? "",
         message.userId ?? "",
         message.username ?? "",
@@ -36,15 +48,44 @@ function buildMessageKey(message) {
     ].join("|");
 }
 
+function isSameMessageAsOptimistic(optimisticMessage, serverMessage) {
+    if (!isOptimisticMessage(optimisticMessage)) {
+        return false;
+    }
+
+    if (
+        optimisticMessage.room !== serverMessage.room ||
+        optimisticMessage.userId !== serverMessage.userId ||
+        optimisticMessage.username !== serverMessage.username ||
+        optimisticMessage.content !== serverMessage.content
+    ) {
+        return false;
+    }
+
+    const optimisticTime = new Date(optimisticMessage.sentAt).getTime();
+    const serverTime = new Date(serverMessage.sentAt).getTime();
+
+    return Math.abs(serverTime - optimisticTime) <= 15000;
+}
+
 function mergeMessages(currentMessages, incomingMessages) {
     const merged = [...currentMessages];
-    const known = new Set(currentMessages.map(buildMessageKey));
 
-    for (const message of incomingMessages) {
-        const key = buildMessageKey(message);
-        if (!known.has(key)) {
-            known.add(key);
-            merged.push(message);
+    for (const incoming of incomingMessages) {
+        const optimisticIndex = merged.findIndex((message) =>
+            isSameMessageAsOptimistic(message, incoming)
+        );
+
+        if (optimisticIndex >= 0) {
+            merged[optimisticIndex] = incoming;
+            continue;
+        }
+
+        const incomingKey = buildMessageKey(incoming);
+        const alreadyExists = merged.some((message) => buildMessageKey(message) === incomingKey);
+
+        if (!alreadyExists) {
+            merged.push(incoming);
         }
     }
 
@@ -54,17 +95,12 @@ function mergeMessages(currentMessages, incomingMessages) {
 function ChatPage() {
     const session = readAuthSession();
     const [room, setRoom] = useState("global");
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState(() => getCachedMessages("global"));
     const [content, setContent] = useState("");
     const [connected, setConnected] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const clientRef = useRef(null);
     const messagesEndRef = useRef(null);
-
-    useEffect(() => {
-        const cache = readChatCache();
-        setMessages(cache[room] || []);
-    }, [room]);
 
     useEffect(() => {
         const cache = readChatCache();
@@ -81,7 +117,7 @@ function ChatPage() {
                 const data = await fetchChatMessagesApi(room);
 
                 if (!cancelled) {
-                    setMessages((current) => mergeMessages(current, data));
+                    setMessages(data);
                 }
             } catch (error) {
                 if (!cancelled) {
@@ -112,11 +148,18 @@ function ChatPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
+    const handleRoomChange = (event) => {
+        const nextRoom = event.target.value;
+        setRoom(nextRoom);
+        setMessages(getCachedMessages(nextRoom));
+        setErrorMessage("");
+    };
+
     const handleSend = (event) => {
         event.preventDefault();
 
         const trimmed = content.trim();
-        if (!trimmed || !session?.userId) {
+        if (!trimmed || !session?.userId || !session?.token) {
             return;
         }
 
@@ -135,12 +178,14 @@ function ChatPage() {
 
         try {
             clientRef.current?.send({
+                authToken: session.token,
                 userId: session.userId,
                 room,
                 content: trimmed,
             });
         } catch (error) {
             setErrorMessage(error.message || "Could not send message.");
+            setContent(trimmed);
         }
     };
 
@@ -159,7 +204,7 @@ function ChatPage() {
 
                     <label className="chat-room-picker">
                         Room
-                        <select value={room} onChange={(event) => setRoom(event.target.value)}>
+                        <select value={room} onChange={handleRoomChange}>
                             <option value="global">global</option>
                             <option value="music">music</option>
                             <option value="admins">admins</option>

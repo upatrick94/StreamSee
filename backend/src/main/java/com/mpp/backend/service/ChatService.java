@@ -32,7 +32,7 @@ public class ChatService {
     }
 
     public ChatMessageResponse save(ChatMessageRequest request) {
-        authorizationService.ensurePermission(request.userId(), "CHAT_USE");
+        authorizationService.ensurePermission(request.authToken(), request.userId(), "CHAT_USE");
         UserAccountEntity user = authorizationService.requireUser(request.userId());
 
         ChatMessageDocument message = new ChatMessageDocument(
@@ -44,13 +44,12 @@ public class ChatService {
         );
 
         ChatMessageDocument saved = persist(message);
-
         auditLogService.logAuthenticatedAction(user.getId(), "SEND_CHAT_MESSAGE room=" + saved.getRoom());
         return map(saved);
     }
 
-    public List<ChatMessageResponse> recent(Long userId, String room) {
-        authorizationService.ensurePermission(userId, "CHAT_USE");
+    public List<ChatMessageResponse> recent(String authToken, Long userId, String room) {
+        authorizationService.ensurePermission(authToken, userId, "CHAT_USE");
         auditLogService.logAuthenticatedAction(userId, "READ_CHAT room=" + room);
         return loadRecent(room).stream().map(this::map).toList();
     }

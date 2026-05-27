@@ -22,6 +22,10 @@ export async function apiFetch(path, options = {}) {
         headers.set("Content-Type", "application/json");
     }
 
+    if (session?.token) {
+        headers.set("Authorization", `Bearer ${session.token}`);
+    }
+
     if (session?.userId) {
         headers.set("X-User-Id", String(session.userId));
     }

@@ -1,13 +1,13 @@
 package com.mpp.backend.service;
 
-import com.mpp.backend.dto.LoginRequest;
-import com.mpp.backend.dto.LoginResponse;
-import com.mpp.backend.dto.RegisterRequest;
+import com.mpp.backend.dto.*;
+import com.mpp.backend.error.UnauthorizedException;
 import com.mpp.backend.repository.audit.AuditLogRepository;
 import com.mpp.backend.repository.security.UserAccountRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,25 +26,62 @@ class AuthServiceTest {
     @Autowired
     private UserAccountRepository userAccountRepository;
 
+    @Autowired
+    private EmailCodeChallengeService challengeService;
+
+    @MockBean
+    private OneTimeCodeEmailService emailService;
+
     @Test
-    void shouldLoginAdminAndReturnPermissions() {
-        LoginResponse response = authService.login(new LoginRequest("admin", "admin123"), "127.0.0.1");
+    void shouldLoginAdminAndReturnPermissionsAndToken() {
+        AuthCodeChallengeResponse challenge = authService.requestLoginCode(
+                new LoginStartRequest("admin", "admin123", "blue"),
+                "127.0.0.1"
+        );
+
+        LoginResponse response = authService.verifyLoginCode(
+                new LoginCodeVerifyRequest(
+                        challenge.challengeId(),
+                        challengeService.peekCode(challenge.challengeId())
+                ),
+                "127.0.0.1"
+        );
+
         assertThat(response.roles()).contains("ADMIN");
         assertThat(response.permissions()).contains("AUDIT_VIEW", "OBSERVATION_VIEW", "CHAT_USE");
+        assertThat(response.token()).isNotBlank();
+        assertThat(response.inactivityTimeoutSeconds()).isPositive();
     }
 
     @Test
-    void shouldRejectBadPassword() {
-        assertThatThrownBy(() -> authService.login(new LoginRequest("admin", "wrong"), "127.0.0.1"))
-                .isInstanceOf(IllegalArgumentException.class);
+    void shouldRejectBadSecurityAnswer() {
+        assertThatThrownBy(() -> authService.requestLoginCode(
+                new LoginStartRequest("admin", "admin123", "wrong"),
+                "127.0.0.1"
+        )).isInstanceOf(UnauthorizedException.class);
+
         assertThat(auditLogRepository.findTop100ByOrderByTimestampDesc().getFirst().getActionInformation())
                 .startsWith("LOGIN_FAILURE");
     }
 
     @Test
     void shouldRegisterNormalUser() {
-        LoginResponse response = authService.register(
-                new RegisterRequest("alex", "Alex Carter", "secret123"),
+        AuthCodeChallengeResponse challenge = authService.requestRegisterCode(
+                new RegisterStartRequest(
+                        "alex",
+                        "Alex Carter",
+                        "alex@example.com",
+                        "secret123",
+                        "What city were you born in?",
+                        "rock"
+                )
+        );
+
+        LoginResponse response = authService.verifyRegisterCode(
+                new RegisterCodeVerifyRequest(
+                        challenge.challengeId(),
+                        challengeService.peekCode(challenge.challengeId())
+                ),
                 "127.0.0.1"
         );
 
@@ -52,6 +89,36 @@ class AuthServiceTest {
         assertThat(response.displayName()).isEqualTo("Alex Carter");
         assertThat(response.roles()).containsExactly("USER");
         assertThat(response.permissions()).contains("PLAYLIST_READ", "PLAYLIST_WRITE", "CHAT_USE");
+        assertThat(response.token()).isNotBlank();
         assertThat(userAccountRepository.findByUsernameIgnoreCase("alex")).isPresent();
+    }
+
+    @Test
+    void shouldResetPassword() {
+        AuthCodeChallengeResponse resetChallenge = authService.requestPasswordResetCode(
+                new PasswordResetStartRequest("user", "luna", "newpass123")
+        );
+
+        authService.verifyPasswordResetCode(
+                new PasswordResetCodeVerifyRequest(
+                        resetChallenge.challengeId(),
+                        challengeService.peekCode(resetChallenge.challengeId())
+                )
+        );
+
+        AuthCodeChallengeResponse loginChallenge = authService.requestLoginCode(
+                new LoginStartRequest("user", "newpass123", "luna"),
+                "127.0.0.1"
+        );
+
+        LoginResponse response = authService.verifyLoginCode(
+                new LoginCodeVerifyRequest(
+                        loginChallenge.challengeId(),
+                        challengeService.peekCode(loginChallenge.challengeId())
+                ),
+                "127.0.0.1"
+        );
+
+        assertThat(response.username()).isEqualTo("user");
     }
 }

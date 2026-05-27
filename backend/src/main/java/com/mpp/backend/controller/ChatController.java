@@ -23,10 +23,11 @@ public class ChatController {
 
     @GetMapping("/messages")
     public List<ChatMessageResponse> recentMessages(
+            @RequestHeader("Authorization") String authToken,
             @RequestHeader("X-User-Id") Long userId,
             @RequestParam(defaultValue = "global") String room
     ) {
-        return chatService.recent(userId, room);
+        return chatService.recent(authToken, userId, room);
     }
 
     @MessageMapping("/chat.send")

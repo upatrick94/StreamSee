@@ -1,5 +1,6 @@
 package com.mpp.backend.dto;
 
+import java.time.Instant;
 import java.util.List;
 
 public record LoginResponse(
@@ -7,6 +8,9 @@ public record LoginResponse(
         String username,
         String displayName,
         List<String> roles,
-        List<String> permissions
+        List<String> permissions,
+        String token,
+        Instant expiresAt,
+        long inactivityTimeoutSeconds
 ) {
 }

@@ -17,7 +17,8 @@ import java.util.List;
 import static org.mockito.BDDMockito.doNothing;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = AdminController.class)
 @Import(com.mpp.backend.error.RestExceptionHandler.class)
@@ -34,12 +35,14 @@ class AdminControllerTest {
 
     @Test
     void shouldReturnAuditLogs() throws Exception {
-        doNothing().when(authorizationService).ensurePermission(1L, "AUDIT_VIEW");
+        doNothing().when(authorizationService).ensurePermission("Bearer token-1", 1L, "AUDIT_VIEW");
         given(auditLogService.getRecentLogs()).willReturn(List.of(
                 new AuditLogResponse(10L, 1L, "admin", "ADMIN", "DELETE_PLAYLIST id=5", Instant.parse("2026-05-04T10:00:00Z"), true)
         ));
 
-        mockMvc.perform(get("/api/admin/audit-logs").header("X-User-Id", "1"))
+        mockMvc.perform(get("/api/admin/audit-logs")
+                        .header("Authorization", "Bearer token-1")
+                        .header("X-User-Id", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].username").value("admin"))
                 .andExpect(jsonPath("$[0].suspicious").value(true));
@@ -47,12 +50,14 @@ class AdminControllerTest {
 
     @Test
     void shouldReturnObservationList() throws Exception {
-        doNothing().when(authorizationService).ensurePermission(1L, "OBSERVATION_VIEW");
+        doNothing().when(authorizationService).ensurePermission("Bearer token-1", 1L, "OBSERVATION_VIEW");
         given(auditLogService.getObservationList()).willReturn(List.of(
                 new ObservationEntryResponse(1L, "admin", "Repeated DELETE_PLAYLIST", 3, Instant.parse("2026-05-04T09:50:00Z"), Instant.parse("2026-05-04T10:00:00Z"))
         ));
 
-        mockMvc.perform(get("/api/admin/observation-list").header("X-User-Id", "1"))
+        mockMvc.perform(get("/api/admin/observation-list")
+                        .header("Authorization", "Bearer token-1")
+                        .header("X-User-Id", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].username").value("admin"))
                 .andExpect(jsonPath("$[0].evidenceCount").value(3));

@@ -102,7 +102,7 @@ function PlaylistGridPage({ onDeletePlaylist }) {
 
     return (
         <div className="playlist-grid-page page-fade">
-            <Navbar activePage="home" />
+            <Navbar activePage="playlists" />
 
             <section className="playlist-grid-section">
                 <div className="playlist-grid-header">

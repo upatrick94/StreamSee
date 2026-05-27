@@ -12,6 +12,8 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ChatPage from "./pages/ChatPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import AuthCodePage from "./pages/AuthCodePage";
 
 import sundayChillCover from "./assets/Clear Music.jpg";
 import throwbackMixCover from "./assets/vibing cd playlist cover.jpg";
@@ -48,7 +50,13 @@ import {
     trackPageVisit,
     trackPlaylistAction,
 } from "./utils/browserActivityCookies";
-import { clearAuthSession, hasPermission, readAuthSession } from "./api/authApi";
+import {
+    clearAuthSession,
+    hasPermission,
+    isSessionExpired,
+    readAuthSession,
+    touchAuthSession,
+} from "./api/authApi";
 
 function isConnectivityError(error) {
     if (!error) return false;
@@ -92,7 +100,7 @@ function AdminRoute({ authenticated, allowed, children }) {
 function App() {
     const location = useLocation();
     const authSession = readAuthSession();
-    const isAuthenticated = Boolean(authSession?.userId);
+    const isAuthenticated = Boolean(authSession?.userId && authSession?.token);
     const canViewAdmin = hasPermission(authSession, "AUDIT_VIEW");
 
     const [playlists, setPlaylists] = useState([]);
@@ -150,6 +158,12 @@ function App() {
     ]);
 
     useEffect(() => {
+        if (!authSession) {
+            clearAuthSession();
+        }
+    }, [authSession]);
+
+    useEffect(() => {
         playlistsRef.current = playlists;
         writeCachedPlaylists(playlists);
     }, [playlists]);
@@ -163,6 +177,37 @@ function App() {
         const updatedProfile = trackPageVisit(location.pathname);
         setActivityProfile(updatedProfile);
     }, [location.pathname]);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            return undefined;
+        }
+
+        const handleActivity = () => {
+            touchAuthSession();
+        };
+
+        const intervalId = window.setInterval(() => {
+            const session = readAuthSession();
+            if (!session || isSessionExpired(session)) {
+                clearAuthSession();
+                window.location.assign("/login");
+            }
+        }, 1000);
+
+        const events = ["click", "keydown", "mousemove", "scroll", "touchstart"];
+
+        events.forEach((eventName) => {
+            window.addEventListener(eventName, handleActivity);
+        });
+
+        return () => {
+            window.clearInterval(intervalId);
+            events.forEach((eventName) => {
+                window.removeEventListener(eventName, handleActivity);
+            });
+        };
+    }, [isAuthenticated]);
 
     const clearActionError = () => setActionError("");
 
@@ -713,6 +758,8 @@ function App() {
                 <Route path="/" element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} />
                 <Route path="/login" element={isAuthenticated ? <Navigate to="/home" replace /> : <LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/auth-code" element={<AuthCodePage />} />
                 <Route path="/about" element={<About />} />
 
                 <Route

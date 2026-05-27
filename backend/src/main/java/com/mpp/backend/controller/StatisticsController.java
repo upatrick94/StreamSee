@@ -29,8 +29,11 @@ public class StatisticsController {
     }
 
     @GetMapping
-    public StatisticsResponse getStatistics(@RequestHeader("X-User-Id") Long userId) {
-        authorizationService.ensurePermission(userId, "PLAYLIST_READ");
+    public StatisticsResponse getStatistics(
+            @RequestHeader("Authorization") String authToken,
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+        authorizationService.ensurePermission(authToken, userId, "PLAYLIST_READ");
         auditLogService.logAuthenticatedAction(userId, "READ_STATISTICS");
         return playlistMapper.toResponse(playlistService.getStatistics());
     }

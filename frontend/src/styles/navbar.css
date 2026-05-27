@@ -2,20 +2,27 @@
     width: 100%;
     max-width: 1280px;
     margin: 0 auto;
-    padding: 26px 32px 0;
-    display: grid;
-    grid-template-columns: auto 1fr;
+    padding: 26px 32px 0 0;
+    display: flex;
     align-items: center;
-    gap: 28px;
+    box-sizing: border-box;
 }
 
 .navbar-admin {
-    padding-left: 12px;
+    padding-left: 0;
 }
 
 .logo-wrapper {
     position: relative;
-    justify-self: start;
+    flex: 0 0 auto;
+    width: 74px;
+    height: 74px;
+    margin-left: -60px;
+    margin-right: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
 }
 
 .logo {
@@ -52,9 +59,12 @@
 }
 
 .nav-links {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+    align-items: center;
     gap: 18px 46px;
 }
 
@@ -75,11 +85,21 @@
 @media (max-width: 1100px) {
     .navbar {
         padding: 22px 22px 0;
-        gap: 18px;
     }
 
     .navbar-admin {
-        padding-left: 8px;
+        padding-left: 22px;
+    }
+
+    .logo-wrapper {
+        width: 64px;
+        height: 64px;
+        margin-left: 0;
+        margin-right: 28px;
+    }
+
+    .logo {
+        width: 64px;
     }
 
     .nav-links {
@@ -93,10 +113,11 @@
 
 @media (max-width: 780px) {
     .navbar {
-        max-width: 100%;
         padding: 20px 16px 0;
-        grid-template-columns: 1fr;
-        justify-items: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
     }
 
     .navbar-admin {
@@ -104,12 +125,9 @@
     }
 
     .logo-wrapper {
-        justify-self: center;
-    }
-
-    .logo-dropdown {
-        left: 50%;
-        transform: translateX(-50%);
+        width: auto;
+        height: auto;
+        margin: 0 0 12px;
     }
 
     .nav-links {
@@ -132,7 +150,7 @@
     }
 
     .logo {
-        width: 64px;
+        width: 56px;
     }
 
     .nav-links a {

@@ -505,7 +505,7 @@ function StatsPage({
 
     return (
         <div className="stats-page page-fade">
-            <Navbar activePage="home" />
+            <Navbar activePage="stats" />
 
             <section className="stats-wrapper" style={{ display: "grid", gap: "1.6rem" }}>
                 <div className="stats-header" style={{ marginBottom: 0 }}>

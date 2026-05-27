@@ -19,6 +19,16 @@ public class RestExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), List.of());
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnauthorized(UnauthorizedException exception) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, exception.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiErrorResponse> handleForbidden(ForbiddenException exception) {
+        return buildResponse(HttpStatus.FORBIDDEN, exception.getMessage(), List.of());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
         List<String> details = exception.getBindingResult()

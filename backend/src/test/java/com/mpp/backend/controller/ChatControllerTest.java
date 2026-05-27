@@ -1,6 +1,5 @@
 package com.mpp.backend.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mpp.backend.dto.ChatMessageRequest;
 import com.mpp.backend.dto.ChatMessageResponse;
 import com.mpp.backend.service.ChatService;
@@ -18,9 +17,9 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = ChatController.class)
 @Import(com.mpp.backend.error.RestExceptionHandler.class)
@@ -28,9 +27,6 @@ class ChatControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     @MockBean
     private ChatService chatService;
@@ -40,11 +36,12 @@ class ChatControllerTest {
 
     @Test
     void shouldReturnRecentMessages() throws Exception {
-        given(chatService.recent(2L, "global")).willReturn(List.of(
+        given(chatService.recent("Bearer token-2", 2L, "global")).willReturn(List.of(
                 new ChatMessageResponse("abc", "global", 2L, "user", "hello", Instant.parse("2026-05-04T10:00:00Z"))
         ));
 
         mockMvc.perform(get("/api/chat/messages")
+                        .header("Authorization", "Bearer token-2")
                         .header("X-User-Id", "2")
                         .param("room", "global"))
                 .andExpect(status().isOk())
@@ -53,7 +50,7 @@ class ChatControllerTest {
 
     @Test
     void shouldPublishSavedMessageToTopic() {
-        ChatMessageRequest request = new ChatMessageRequest(2L, "global", "hello");
+        ChatMessageRequest request = new ChatMessageRequest("token-2", 2L, "global", "hello");
         ChatMessageResponse response = new ChatMessageResponse("abc", "global", 2L, "user", "hello", Instant.parse("2026-05-04T10:00:00Z"));
 
         given(chatService.save(request)).willReturn(response);

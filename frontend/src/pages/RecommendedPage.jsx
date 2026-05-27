@@ -5,7 +5,7 @@ import "../styles/playlistGrid.css";
 function RecommendedPage({ playlists, onAddPlaylist }) {
     return (
         <div className="playlist-grid-page page-fade">
-            <Navbar activePage="home" />
+            <Navbar activePage="recommended" />
 
             <section className="playlist-grid-section">
                 <div className="playlist-grid-header">

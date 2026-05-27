@@ -1,8 +1,6 @@
 package com.mpp.backend.service;
 
-import com.mpp.backend.dto.ChatMessageRequest;
-import com.mpp.backend.dto.ChatMessageResponse;
-import com.mpp.backend.dto.LoginRequest;
+import com.mpp.backend.dto.*;
 import com.mpp.backend.repository.chat.ChatMessageDocument;
 import com.mpp.backend.repository.chat.ChatMessageRepository;
 import org.junit.jupiter.api.Test;
@@ -30,8 +28,14 @@ class ChatServiceTest {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private EmailCodeChallengeService challengeService;
+
     @MockBean
     private ChatMessageRepository chatMessageRepository;
+
+    @MockBean
+    private OneTimeCodeEmailService emailService;
 
     @Test
     void shouldPersistChatMessage() throws Exception {
@@ -45,13 +49,29 @@ class ChatServiceTest {
                 savedDocument("msg-1", "global", 2L, "user", "hello from mongo")
         ));
 
-        Long userId = authService.login(new LoginRequest("user", "user123"), "127.0.0.1").userId();
+        AuthCodeChallengeResponse challenge = authService.requestLoginCode(
+                new LoginStartRequest("user", "user123", "luna"),
+                "127.0.0.1"
+        );
 
-        ChatMessageResponse saved = chatService.save(new ChatMessageRequest(userId, "global", "hello from mongo"));
+        LoginResponse login = authService.verifyLoginCode(
+                new LoginCodeVerifyRequest(
+                        challenge.challengeId(),
+                        challengeService.peekCode(challenge.challengeId())
+                ),
+                "127.0.0.1"
+        );
+
+        Long userId = login.userId();
+        String token = login.token();
+
+        ChatMessageResponse saved = chatService.save(
+                new ChatMessageRequest(token, userId, "global", "hello from mongo")
+        );
 
         assertThat(saved.room()).isEqualTo("global");
         assertThat(saved.username()).isEqualTo("user");
-        assertThat(chatService.recent(userId, "global"))
+        assertThat(chatService.recent(token, userId, "global"))
                 .extracting(ChatMessageResponse::content)
                 .contains("hello from mongo");
     }

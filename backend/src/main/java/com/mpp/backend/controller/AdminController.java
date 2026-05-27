@@ -21,14 +21,20 @@ public class AdminController {
     }
 
     @GetMapping("/audit-logs")
-    public List<AuditLogResponse> getAuditLogs(@RequestHeader("X-User-Id") Long userId) {
-        authorizationService.ensurePermission(userId, "AUDIT_VIEW");
+    public List<AuditLogResponse> getAuditLogs(
+            @RequestHeader("Authorization") String authToken,
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+        authorizationService.ensurePermission(authToken, userId, "AUDIT_VIEW");
         return auditLogService.getRecentLogs();
     }
 
     @GetMapping("/observation-list")
-    public List<ObservationEntryResponse> getObservationList(@RequestHeader("X-User-Id") Long userId) {
-        authorizationService.ensurePermission(userId, "OBSERVATION_VIEW");
+    public List<ObservationEntryResponse> getObservationList(
+            @RequestHeader("Authorization") String authToken,
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+        authorizationService.ensurePermission(authToken, userId, "OBSERVATION_VIEW");
         return auditLogService.getObservationList();
     }
 }

@@ -8,12 +8,18 @@ import java.util.List;
 
 public class PlaylistStore {
 
+    private final Long ownerUserId;
     private Playlist playlist;
     private final List<PlaylistHistoryEntry> historyEntries;
 
-    public PlaylistStore(Playlist playlist, List<PlaylistHistoryEntry> historyEntries) {
+    public PlaylistStore(Long ownerUserId, Playlist playlist, List<PlaylistHistoryEntry> historyEntries) {
+        this.ownerUserId = ownerUserId;
         this.playlist = playlist;
         this.historyEntries = new ArrayList<>(historyEntries);
+    }
+
+    public Long getOwnerUserId() {
+        return ownerUserId;
     }
 
     public Playlist getPlaylist() {

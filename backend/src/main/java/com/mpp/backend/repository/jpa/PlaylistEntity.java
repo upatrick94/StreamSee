@@ -36,6 +36,9 @@ public class PlaylistEntity {
     @Column(nullable = false, length = 500)
     private String description;
 
+    @Column(name = "owner_user_id")
+    private Long ownerUserId;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "playlist_genres", joinColumns = @JoinColumn(name = "playlist_id"))
     @OrderColumn(name = "genre_order")
@@ -59,8 +62,9 @@ public class PlaylistEntity {
     protected PlaylistEntity() {
     }
 
-    public PlaylistEntity(Long id, String name, String creator, String coverUrl, String description, Instant createdAt, Instant updatedAt) {
+    public PlaylistEntity(Long id, Long ownerUserId, String name, String creator, String coverUrl, String description, Instant createdAt, Instant updatedAt) {
         this.id = id;
+        this.ownerUserId = ownerUserId;
         this.name = name;
         this.creator = creator;
         this.coverUrl = coverUrl;
@@ -70,6 +74,7 @@ public class PlaylistEntity {
     }
 
     public void updateDetails(
+            Long ownerUserId,
             String name,
             String creator,
             String coverUrl,
@@ -77,6 +82,7 @@ public class PlaylistEntity {
             Instant createdAt,
             Instant updatedAt
     ) {
+        this.ownerUserId = ownerUserId;
         this.name = name;
         this.creator = creator;
         this.coverUrl = coverUrl;
@@ -118,6 +124,10 @@ public class PlaylistEntity {
 
     public String getDescription() {
         return description;
+    }
+
+    public Long getOwnerUserId() {
+        return ownerUserId;
     }
 
     public List<String> getGenres() {

@@ -35,6 +35,6 @@ public class StatisticsController {
     ) {
         authorizationService.ensurePermission(authToken, userId, "PLAYLIST_READ");
         auditLogService.logAuthenticatedAction(userId, "READ_STATISTICS");
-        return playlistMapper.toResponse(playlistService.getStatistics());
+        return playlistMapper.toResponse(playlistService.getStatistics(userId));
     }
 }

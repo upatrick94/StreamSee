@@ -50,7 +50,7 @@ public class PlaylistController {
     ) {
         authorizationService.ensurePermission(authToken, userId, "PLAYLIST_READ");
         auditLogService.logAuthenticatedAction(userId, "READ_PLAYLISTS");
-        var playlistPage = playlistService.getAllPlaylists(page, size, new PlaylistFilter(name, creator, genre));
+        var playlistPage = playlistService.getAllPlaylists(userId, page, size, new PlaylistFilter(name, creator, genre));
         return new PageResponse<>(playlistPage.content().stream().map(playlistMapper::toResponse).toList(), playlistPage.page(), playlistPage.size(), playlistPage.totalElements(), playlistPage.totalPages());
     }
 
@@ -62,7 +62,7 @@ public class PlaylistController {
     ) {
         authorizationService.ensurePermission(authToken, userId, "PLAYLIST_READ");
         auditLogService.logAuthenticatedAction(userId, "READ_PLAYLIST id=" + id);
-        return playlistMapper.toResponse(playlistService.getPlaylistById(id));
+        return playlistMapper.toResponse(playlistService.getPlaylistById(userId, id));
     }
 
     @PostMapping
@@ -73,7 +73,7 @@ public class PlaylistController {
             @Valid @RequestBody PlaylistRequest request
     ) {
         authorizationService.ensurePermission(authToken, userId, "PLAYLIST_WRITE");
-        PlaylistResponse response = playlistMapper.toResponse(playlistService.createPlaylist(request));
+        PlaylistResponse response = playlistMapper.toResponse(playlistService.createPlaylist(userId, request));
         auditLogService.logAuthenticatedAction(userId, "CREATE_PLAYLIST id=" + response.id());
         return response;
     }
@@ -86,7 +86,7 @@ public class PlaylistController {
             @Valid @RequestBody PlaylistRequest request
     ) {
         authorizationService.ensurePermission(authToken, userId, "PLAYLIST_WRITE");
-        PlaylistResponse response = playlistMapper.toResponse(playlistService.updatePlaylist(id, request));
+        PlaylistResponse response = playlistMapper.toResponse(playlistService.updatePlaylist(userId, id, request));
         auditLogService.logAuthenticatedAction(userId, "UPDATE_PLAYLIST id=" + id);
         return response;
     }
@@ -99,7 +99,7 @@ public class PlaylistController {
             @PathVariable long id
     ) {
         authorizationService.ensurePermission(authToken, userId, "PLAYLIST_DELETE");
-        playlistService.deletePlaylist(id);
+        playlistService.deletePlaylist(userId, id);
         auditLogService.logAuthenticatedAction(userId, "DELETE_PLAYLIST id=" + id);
     }
 
@@ -113,7 +113,7 @@ public class PlaylistController {
     ) {
         authorizationService.ensurePermission(authToken, userId, "PLAYLIST_READ");
         auditLogService.logAuthenticatedAction(userId, "READ_PLAYLIST_HISTORY id=" + id);
-        var historyPage = playlistService.getPlaylistHistory(id, page, size);
+        var historyPage = playlistService.getPlaylistHistory(userId, id, page, size);
         return new PageResponse<>(historyPage.content().stream().map(playlistMapper::toResponse).toList(), historyPage.page(), historyPage.size(), historyPage.totalElements(), historyPage.totalPages());
     }
 
@@ -125,7 +125,7 @@ public class PlaylistController {
             @PathVariable long historyEntryId
     ) {
         authorizationService.ensurePermission(authToken, userId, "PLAYLIST_RESTORE");
-        PlaylistResponse response = playlistMapper.toResponse(playlistService.restoreSnapshot(id, historyEntryId));
+        PlaylistResponse response = playlistMapper.toResponse(playlistService.restoreSnapshot(userId, id, historyEntryId));
         auditLogService.logAuthenticatedAction(userId, "RESTORE_PLAYLIST id=" + id + " historyEntryId=" + historyEntryId);
         return response;
     }

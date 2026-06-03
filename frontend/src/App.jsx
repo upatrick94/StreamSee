@@ -518,13 +518,21 @@ function App() {
         }
     };
 
-    const handleAddPlaylist = (playlist) => {
+    const handleAddPlaylist = async (playlist) => {
         const builtPlaylist = buildPlaylist(playlist);
 
         const updatedProfile = trackPlaylistAction("add", builtPlaylist);
         setActivityProfile(updatedProfile);
 
-        setPlaylists((currentPlaylists) => [...currentPlaylists, builtPlaylist]);
+        await handleCreatePlaylist({
+            name: builtPlaylist.name,
+            creator: builtPlaylist.creator,
+            cover: builtPlaylist.cover,
+            description: builtPlaylist.description,
+            genres: builtPlaylist.genres,
+            songs: builtPlaylist.songs,
+        });
+
         setRecommendedPlaylists((currentRecommendations) =>
             currentRecommendations.filter((playlistItem) => playlistItem.id !== playlist.id)
         );

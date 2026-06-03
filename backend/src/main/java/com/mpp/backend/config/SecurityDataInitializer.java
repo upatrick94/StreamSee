@@ -48,7 +48,7 @@ public class SecurityDataInitializer implements ApplicationRunner {
 
         RoleEntity user = roles.findByName("USER").orElseGet(() -> roles.save(new RoleEntity("USER", "Restricted permissions")));
         user.getPermissions().clear();
-        user.getPermissions().addAll(List.of(read, write, chat));
+        user.getPermissions().addAll(List.of(read, write, delete, restore, chat));
         roles.save(user);
 
         ensureSeedUser(

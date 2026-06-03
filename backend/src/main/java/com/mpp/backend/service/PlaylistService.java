@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
@@ -34,16 +35,25 @@ public class PlaylistService {
     }
 
     public PageResponse<Playlist> getAllPlaylists(int page, int size) {
-        return getAllPlaylists(page, size, new PlaylistFilter(null, null, null));
+        return getAllPlaylists(null, page, size, new PlaylistFilter(null, null, null));
     }
 
     public PageResponse<Playlist> getAllPlaylists(int page, int size, PlaylistFilter filter) {
+        return getAllPlaylists(null, page, size, filter);
+    }
+
+    public PageResponse<Playlist> getAllPlaylists(Long ownerUserId, int page, int size) {
+        return getAllPlaylists(ownerUserId, page, size, new PlaylistFilter(null, null, null));
+    }
+
+    public PageResponse<Playlist> getAllPlaylists(Long ownerUserId, int page, int size, PlaylistFilter filter) {
         validatePaging(page, size);
 
         List<Playlist> playlists = (filter == null || filter.isEmpty()
                 ? playlistRepository.findAll()
                 : playlistRepository.findAll(filter))
                 .stream()
+                .filter(store -> Objects.equals(store.getOwnerUserId(), ownerUserId))
                 .map(PlaylistStore::getPlaylist)
                 .sorted(Comparator.comparing(Playlist::updatedAt).reversed().thenComparing(Playlist::id))
                 .toList();
@@ -52,10 +62,18 @@ public class PlaylistService {
     }
 
     public Playlist getPlaylistById(long id) {
-        return findStore(id).getPlaylist();
+        return getPlaylistById(null, id);
+    }
+
+    public Playlist getPlaylistById(Long ownerUserId, long id) {
+        return findStore(ownerUserId, id).getPlaylist();
     }
 
     public Playlist createPlaylist(PlaylistRequest request) {
+        return createPlaylist(null, request);
+    }
+
+    public Playlist createPlaylist(Long ownerUserId, PlaylistRequest request) {
         long playlistId = playlistIdSequence.incrementAndGet();
         Instant now = Instant.now();
         Playlist playlist = playlistMapper.toNewPlaylist(request, playlistId, songIdSequence, now);
@@ -68,12 +86,16 @@ public class PlaylistService {
                 playlist
         );
 
-        playlistRepository.save(new PlaylistStore(playlist, List.of(initialHistory)));
+        playlistRepository.save(new PlaylistStore(ownerUserId, playlist, List.of(initialHistory)));
         return playlist;
     }
 
     public Playlist updatePlaylist(long id, PlaylistRequest request) {
-        PlaylistStore store = findStore(id);
+        return updatePlaylist(null, id, request);
+    }
+
+    public Playlist updatePlaylist(Long ownerUserId, long id, PlaylistRequest request) {
+        PlaylistStore store = findStore(ownerUserId, id);
         Instant now = Instant.now();
         Playlist updatedPlaylist = playlistMapper.toUpdatedPlaylist(store.getPlaylist(), request, songIdSequence, now);
 
@@ -91,15 +113,21 @@ public class PlaylistService {
     }
 
     public void deletePlaylist(long id) {
-        if (!playlistRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Playlist with id " + id + " was not found.");
-        }
+        deletePlaylist(null, id);
+    }
+
+    public void deletePlaylist(Long ownerUserId, long id) {
+        findStore(ownerUserId, id);
         playlistRepository.deleteById(id);
     }
 
     public PageResponse<PlaylistHistoryEntry> getPlaylistHistory(long id, int page, int size) {
+        return getPlaylistHistory(null, id, page, size);
+    }
+
+    public PageResponse<PlaylistHistoryEntry> getPlaylistHistory(Long ownerUserId, long id, int page, int size) {
         validatePaging(page, size);
-        PlaylistStore store = findStore(id);
+        PlaylistStore store = findStore(ownerUserId, id);
         List<PlaylistHistoryEntry> historyEntries = store.getHistoryEntries().stream()
                 .sorted(Comparator.comparing(PlaylistHistoryEntry::createdAt).reversed())
                 .toList();
@@ -108,7 +136,11 @@ public class PlaylistService {
     }
 
     public Playlist restoreSnapshot(long id, long historyEntryId) {
-        PlaylistStore store = findStore(id);
+        return restoreSnapshot(null, id, historyEntryId);
+    }
+
+    public Playlist restoreSnapshot(Long ownerUserId, long id, long historyEntryId) {
+        PlaylistStore store = findStore(ownerUserId, id);
         PlaylistHistoryEntry historyEntry = store.getHistoryEntries().stream()
                 .filter(entry -> entry.id() == historyEntryId)
                 .findFirst()
@@ -143,7 +175,12 @@ public class PlaylistService {
     }
 
     public PlaylistStatistics getStatistics() {
+        return getStatistics(null);
+    }
+
+    public PlaylistStatistics getStatistics(Long ownerUserId) {
         List<Playlist> playlists = playlistRepository.findAll().stream()
+                .filter(store -> Objects.equals(store.getOwnerUserId(), ownerUserId))
                 .map(PlaylistStore::getPlaylist)
                 .toList();
 
@@ -201,11 +238,12 @@ public class PlaylistService {
                 playlist
         );
 
-        playlistRepository.save(new PlaylistStore(playlist, List.of(initialHistory)));
+        playlistRepository.save(new PlaylistStore(null, playlist, List.of(initialHistory)));
     }
 
-    private PlaylistStore findStore(long id) {
+    private PlaylistStore findStore(Long ownerUserId, long id) {
         return playlistRepository.findById(id)
+                .filter(store -> Objects.equals(store.getOwnerUserId(), ownerUserId))
                 .orElseThrow(() -> new ResourceNotFoundException("Playlist with id " + id + " was not found."));
     }
 

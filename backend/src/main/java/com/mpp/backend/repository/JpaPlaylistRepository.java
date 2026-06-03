@@ -82,6 +82,7 @@ public class JpaPlaylistRepository implements PlaylistRepository {
         Playlist playlist = store.getPlaylist();
 
         entity.updateDetails(
+                store.getOwnerUserId(),
                 playlist.name(),
                 playlist.creator(),
                 playlist.coverUrl(),
@@ -149,7 +150,7 @@ public class JpaPlaylistRepository implements PlaylistRepository {
                 ))
                 .toList();
 
-        return new PlaylistStore(playlist, historyEntries);
+        return new PlaylistStore(entity.getOwnerUserId(), playlist, historyEntries);
     }
 
     private PlaylistEntity toEntity(PlaylistStore store) {
@@ -157,6 +158,7 @@ public class JpaPlaylistRepository implements PlaylistRepository {
 
         PlaylistEntity entity = new PlaylistEntity(
                 playlist.id(),
+                store.getOwnerUserId(),
                 playlist.name(),
                 playlist.creator(),
                 playlist.coverUrl(),

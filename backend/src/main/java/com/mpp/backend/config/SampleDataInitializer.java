@@ -1,11 +1,12 @@
 package com.mpp.backend.config;
 
-import org.springframework.context.annotation.Profile;
 import com.mpp.backend.model.Playlist;
 import com.mpp.backend.model.Song;
 import com.mpp.backend.service.PlaylistService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -13,6 +14,7 @@ import java.util.List;
 
 @Component
 @Profile("!test")
+@ConditionalOnProperty(name = "app.seed-demo-data", havingValue = "true", matchIfMissing = true)
 public class SampleDataInitializer implements ApplicationRunner {
 
     private final PlaylistService playlistService;

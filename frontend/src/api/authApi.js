@@ -1,8 +1,10 @@
 const AUTH_STORAGE_KEY = "mpp.auth.session";
-const API_HOST = import.meta.env.VITE_API_HOST || window.location.hostname;
-const API_PORT = import.meta.env.VITE_API_PORT || "8080";
-const API_PROTOCOL = import.meta.env.VITE_API_PROTOCOL || window.location.protocol;
-const API_BASE_URL = `${API_PROTOCOL}//${API_HOST}:${API_PORT}`;
+
+function trimTrailingSlash(value) {
+    return value.replace(/\/+$/, "");
+}
+
+const API_BASE_URL = trimTrailingSlash(import.meta.env.VITE_API_BASE_URL || "");
 
 export const SECURITY_QUESTION_OPTIONS = [
     "What was the name of your first school?",

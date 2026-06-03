@@ -11,6 +11,15 @@ node_modules
 dist
 dist-ssr
 *.local
+backend/target/
+backend/data/
+frontend/coverage/
+backend/*.pem
+backend/*-key.pem
+frontend/*.pem
+frontend/*-key.pem
+backend/src/main/resources/*.pem
+backend/src/main/resources/*.p12
 
 # Editor directories and files
 .vscode/*

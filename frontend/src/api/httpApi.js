@@ -1,17 +1,21 @@
 import { readAuthSession } from "./authApi";
 
-const API_HOST = import.meta.env.VITE_API_HOST || window.location.hostname;
-const API_PORT = import.meta.env.VITE_API_PORT || "8080";
-const API_PROTOCOL = import.meta.env.VITE_API_PROTOCOL || window.location.protocol;
-const API_BASE_URL = `${API_PROTOCOL}//${API_HOST}:${API_PORT}`;
+function trimTrailingSlash(value) {
+    return value.replace(/\/+$/, "");
+}
+
+const API_BASE_URL = trimTrailingSlash(import.meta.env.VITE_API_BASE_URL || "");
+const WS_BASE_URL = trimTrailingSlash(
+    import.meta.env.VITE_WS_BASE_URL ||
+    `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`
+);
 
 export function getApiBaseUrl() {
     return API_BASE_URL;
 }
 
 export function getWsBaseUrl() {
-    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    return `${wsProtocol}//${API_HOST}:${API_PORT}`;
+    return WS_BASE_URL;
 }
 
 export async function apiFetch(path, options = {}) {

@@ -2,6 +2,7 @@ package com.mpp.backend.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -19,11 +20,11 @@ public class OneTimeCodeEmailService {
     public OneTimeCodeEmailService(
             @Value("${app.mail.from}") String fromAddress,
             @Value("${app.mail.delivery-mode:log}") String deliveryMode,
-            JavaMailSender mailSender
+            ObjectProvider<JavaMailSender> mailSenderProvider
     ) {
         this.fromAddress = fromAddress;
         this.deliveryMode = deliveryMode;
-        this.mailSender = mailSender;
+        this.mailSender = mailSenderProvider.getIfAvailable();
     }
 
     public void sendCode(String recipientEmail, String purpose, String code) {
@@ -45,6 +46,10 @@ public class OneTimeCodeEmailService {
 
         if (!"smtp".equalsIgnoreCase(deliveryMode)) {
             throw new IllegalStateException("Unsupported mail delivery mode: " + deliveryMode);
+        }
+
+        if (mailSender == null) {
+            throw new IllegalStateException("SMTP mail delivery is enabled, but JavaMailSender is not configured.");
         }
 
         SimpleMailMessage message = new SimpleMailMessage();
